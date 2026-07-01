@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Manager</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --surface: #ffffff;
+        --text: #1f2933;
+        --muted: #667085;
+        --line: #d9dee7;
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --success-bg: #e8f7ee;
+        --success-text: #166534;
+        --error-bg: #fdecec;
+        --error-text: #b42318;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .app {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 40px;
+      }
+
+      .header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 700;
+      }
+
+      .status {
+        min-height: 38px;
+        padding: 9px 12px;
+        border-radius: 6px;
+        color: var(--muted);
+      }
+
+      .status.success {
+        background: var(--success-bg);
+        color: var(--success-text);
+      }
+
+      .status.error {
+        background: var(--error-bg);
+        color: var(--error-text);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(300px, 420px) 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      h2 {
+        margin: 0 0 16px;
+        font-size: 18px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field.full {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px 10px;
+        color: var(--text);
+        font: inherit;
+        background: #fff;
+      }
+
+      textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--primary);
+        outline: 2px solid rgba(37, 99, 235, 0.14);
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
+
+      button {
+        min-height: 42px;
+        border: 0;
+        border-radius: 6px;
+        padding: 0 18px;
+        background: var(--primary);
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--primary-dark);
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.65;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        min-width: 720px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      td.amount {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .empty {
+        padding: 22px 8px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 860px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .header {
+          align-items: stretch;
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .app {
+          width: min(100% - 20px, 1120px);
+          padding-top: 18px;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <div class="header">
+        <h1>Registro de transacciones</h1>
+        <div id="status" class="status" aria-live="polite">Listo para registrar.</div>
+      </div>
+
+      <div class="layout">
+        <section class="panel" aria-labelledby="form-title">
+          <h2 id="form-title">Nueva transacción</h2>
+          <form id="transaction-form">
+            <div class="form-grid">
+              <div class="field">
+                <label for="date">Fecha</label>
+                <input id="date" name="date" type="date" required>
+              </div>
+
+              <div class="field">
+                <label for="type">Tipo</label>
+                <select id="type" name="type" required></select>
+              </div>
+
+              <div class="field">
+                <label for="account">Cuenta</label>
+                <select id="account" name="account" required></select>
+              </div>
+
+              <div class="field">
+                <label for="person">Persona</label>
+                <select id="person" name="person" required></select>
+              </div>
+
+              <div class="field">
+                <label for="category">Categoría</label>
+                <select id="category" name="category" required></select>
+              </div>
+
+              <div class="field">
+                <label for="amount">Monto</label>
+                <input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required>
+              </div>
+
+              <div class="field full">
+                <label for="description">Descripción</label>
+                <input id="description" name="description" type="text" autocomplete="off" required>
+              </div>
+
+              <div class="field full">
+                <label for="notes">Observaciones</label>
+                <textarea id="notes" name="notes"></textarea>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="save-button" type="submit">Guardar</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="recent-title">
+          <h2 id="recent-title">Últimas transacciones</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Cuenta</th>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th>Persona</th>
+                  <th>Monto</th>
+                  <th>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody id="recent-transactions">
+                <tr>
+                  <td class="empty" colspan="8">Cargando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const form = document.getElementById('transaction-form');
+      const statusBox = document.getElementById('status');
+      const saveButton = document.getElementById('save-button');
+      const recentTransactionsBody = document.getElementById('recent-transactions');
+      const fields = {
+        date: document.getElementById('date'),
+        type: document.getElementById('type'),
+        account: document.getElementById('account'),
+        category: document.getElementById('category'),
+        description: document.getElementById('description'),
+        amount: document.getElementById('amount'),
+        person: document.getElementById('person'),
+        notes: document.getElementById('notes'),
+      };
+
+      document.addEventListener('DOMContentLoaded', initialize);
+      form.addEventListener('submit', handleSubmit);
+
+      function initialize() {
+        fields.date.value = getTodayInputValue();
+        setStatus('Cargando datos...', '');
+
+        google.script.run
+          .withSuccessHandler(function(options) {
+            populateOptions(options);
+            setStatus('Listo para registrar.', '');
+            loadRecentTransactions();
+            fields.description.focus();
+          })
+          .withFailureHandler(handleError)
+          .getTransactionFormOptions();
+      }
+
+      function populateOptions(options) {
+        populateSelect(fields.type, options.types, false);
+        populateSelect(fields.account, options.accounts, false);
+        populateSelect(fields.category, options.categories, true);
+        populateSelect(fields.person, options.people, false);
+      }
+
+      function populateSelect(select, options, includeEmpty) {
+        select.innerHTML = '';
+
+        if (includeEmpty) {
+          select.appendChild(new Option('', ''));
+        }
+
+        options.forEach(function(option) {
+          if (typeof option === 'string') {
+            select.appendChild(new Option(option, option));
+            return;
+          }
+
+          select.appendChild(new Option(option.label, option.value));
+        });
+      }
+
+      function handleSubmit(event) {
+        event.preventDefault();
+        saveButton.disabled = true;
+        setStatus('Guardando...', '');
+
+        google.script.run
+          .withSuccessHandler(function() {
+            setStatus('Transacción guardada correctamente.', 'success');
+            resetAfterSave();
+            loadRecentTransactions();
+          })
+          .withFailureHandler(handleError)
+          .saveTransaction(getFormTransaction());
+      }
+
+      function getFormTransaction() {
+        return {
+          date: fields.date.value,
+          type: fields.type.value,
+          account: fields.account.value,
+          category: fields.category.value,
+          description: fields.description.value,
+          amount: fields.amount.value,
+          person: fields.person.value,
+          notes: fields.notes.value,
+        };
+      }
+
+      function resetAfterSave() {
+        fields.description.value = '';
+        fields.category.value = '';
+        fields.amount.value = '';
+        fields.notes.value = '';
+        saveButton.disabled = false;
+        fields.description.focus();
+      }
+
+      function loadRecentTransactions() {
+        google.script.run
+          .withSuccessHandler(renderRecentTransactions)
+          .withFailureHandler(handleError)
+          .getRecentTransactions(10);
+      }
+
+      function renderRecentTransactions(transactions) {
+        recentTransactionsBody.innerHTML = '';
+
+        if (!transactions.length) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.className = 'empty';
+          cell.colSpan = 8;
+          cell.textContent = 'Todavía no hay transacciones.';
+          row.appendChild(cell);
+          recentTransactionsBody.appendChild(row);
+          return;
+        }
+
+        transactions.forEach(function(transaction) {
+          const row = document.createElement('tr');
+          appendCell(row, transaction.date);
+          appendCell(row, transaction.type);
+          appendCell(row, transaction.account);
+          appendCell(row, transaction.category);
+          appendCell(row, transaction.description);
+          appendCell(row, transaction.person);
+          appendCell(row, formatAmount(transaction.amount), 'amount');
+          appendCell(row, transaction.notes);
+          recentTransactionsBody.appendChild(row);
+        });
+      }
+
+      function appendCell(row, value, className) {
+        const cell = document.createElement('td');
+        cell.textContent = value || '';
+
+        if (className) {
+          cell.className = className;
+        }
+
+        row.appendChild(cell);
+      }
+
+      function formatAmount(value) {
+        const amount = Number(value);
+
+        if (Number.isNaN(amount)) {
+          return value || '';
+        }
+
+        return amount.toFixed(2);
+      }
+
+      function handleError(error) {
+        saveButton.disabled = false;
+        setStatus(error && error.message ? error.message : 'Ocurrió un error.', 'error');
+      }
+
+      function setStatus(message, type) {
+        statusBox.textContent = message;
+        statusBox.className = type ? 'status ' + type : 'status';
+      }
+
+      function getTodayInputValue() {
+        const now = new Date();
+        const timezoneOffset = now.getTimezoneOffset() * 60000;
+        return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
+      }
+    </script>
+  </body>
+</html>
