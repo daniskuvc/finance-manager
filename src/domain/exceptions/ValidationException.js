@@ -1,9 +1,7 @@
-const DomainException = require('./DomainException');
-
 /**
  * Exception raised when domain validation fails.
  */
-class ValidationException extends DomainException {
+var ValidationException = class ValidationException extends DomainException {
   /**
    * Creates a validation exception.
    *
@@ -17,6 +15,4 @@ class ValidationException extends DomainException {
       Error.captureStackTrace(this, ValidationException);
     }
   }
-}
-
-module.exports = ValidationException;
+};

@@ -1,5 +1,3 @@
-const ValidationException = require('../exceptions/ValidationException');
-
 /**
  * Validates that a money operation uses another Money value with the same currency.
  *
@@ -20,7 +18,7 @@ function validateSameCurrency(current, other) {
 /**
  * Immutable value object representing a numeric amount in a currency.
  */
-class Money {
+var Money = class Money {
   /**
    * Creates a money value.
    *
@@ -77,6 +75,4 @@ class Money {
       && this.amount === other.amount
       && this.currency === other.currency;
   }
-}
-
-module.exports = Money;
+};

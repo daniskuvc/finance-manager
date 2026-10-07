@@ -6,6 +6,20 @@
 var TRANSACTIONS_SHEET_NAME = 'Transactions';
 
 /**
+ * Name of the sheet used to store categories and their subcategories.
+ *
+ * @type {string}
+ */
+var CATEGORIES_SHEET_NAME = 'Categories';
+
+/**
+ * Ordered catalog sheet columns.
+ *
+ * @type {string[]}
+ */
+var CATEGORY_HEADERS = ['Category', 'Subcategory'];
+
+/**
  * Ordered transaction sheet columns.
  *
  * @type {string[]}
@@ -19,6 +33,7 @@ var TRANSACTION_HEADERS = [
   'Person',
   'Amount',
   'Notes',
+  'Subcategory',
 ];
 
 /**
@@ -43,6 +58,13 @@ var TEMPORARY_TRANSACTION_OPTIONS = {
     'Transporte',
     'Limpieza',
   ],
+  subcategories: {
+    Verduras: ['Zanahoria', 'Arveja', 'Haba'],
+    Frutas: ['Manzana', 'Plátano', 'Naranja'],
+    Carnes: ['Pollo', 'Res', 'Cerdo'],
+    Transporte: [],
+    Limpieza: [],
+  },
   people: [
     'Daniel',
     'Esposa',

@@ -1,7 +1,7 @@
 /**
  * Base exception for domain-layer errors.
  */
-class DomainException extends Error {
+var DomainException = class DomainException extends Error {
   /**
    * Creates a domain exception.
    *
@@ -15,6 +15,4 @@ class DomainException extends Error {
       Error.captureStackTrace(this, DomainException);
     }
   }
-}
-
-module.exports = DomainException;
+};

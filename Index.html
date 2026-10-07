@@ -105,6 +105,10 @@
         grid-column: 1 / -1;
       }
 
+      .field select {
+        min-width: 0;
+      }
+
       label {
         color: var(--muted);
         font-size: 13px;
@@ -259,13 +263,18 @@
               </div>
 
               <div class="field">
+                <label for="subcategory">Subcategoría</label>
+                <select id="subcategory" name="subcategory"></select>
+              </div>
+
+              <div class="field">
                 <label for="amount">Monto</label>
                 <input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required>
               </div>
 
               <div class="field full">
                 <label for="description">Descripción</label>
-                <input id="description" name="description" type="text" autocomplete="off" required>
+                <input id="description" name="description" type="text" autocomplete="off">
               </div>
 
               <div class="field full">
@@ -290,6 +299,7 @@
                   <th>Tipo</th>
                   <th>Cuenta</th>
                   <th>Categoría</th>
+                  <th>Subcategoría</th>
                   <th>Descripción</th>
                   <th>Persona</th>
                   <th>Monto</th>
@@ -312,11 +322,15 @@
       const statusBox = document.getElementById('status');
       const saveButton = document.getElementById('save-button');
       const recentTransactionsBody = document.getElementById('recent-transactions');
+      const ADD_CATEGORY = '__ADD_CATEGORY__';
+      const ADD_SUBCATEGORY = '__ADD_SUBCATEGORY__';
+      let subcategoriesByCategory = {};
       const fields = {
         date: document.getElementById('date'),
         type: document.getElementById('type'),
         account: document.getElementById('account'),
         category: document.getElementById('category'),
+        subcategory: document.getElementById('subcategory'),
         description: document.getElementById('description'),
         amount: document.getElementById('amount'),
         person: document.getElementById('person'),
@@ -325,6 +339,8 @@
 
       document.addEventListener('DOMContentLoaded', initialize);
       form.addEventListener('submit', handleSubmit);
+      fields.category.addEventListener('change', handleCategoryChange);
+      fields.subcategory.addEventListener('change', handleSubcategoryChange);
 
       function initialize() {
         fields.date.value = getTodayInputValue();
@@ -344,11 +360,24 @@
       function populateOptions(options) {
         populateSelect(fields.type, options.types, false);
         populateSelect(fields.account, options.accounts, false);
-        populateSelect(fields.category, options.categories, true);
+        subcategoriesByCategory = options.subcategories || {};
+        populateCategorySelect(options.categories, options.categories[0] || '');
         populateSelect(fields.person, options.people, false);
       }
 
-      function populateSelect(select, options, includeEmpty) {
+      function populateCategorySelect(categories, selectedValue) {
+        populateSelect(fields.category, categories, true, '＋ Añadir nueva categoría…', ADD_CATEGORY);
+        fields.category.value = selectedValue || '';
+        populateSubcategorySelect(fields.category.value);
+      }
+
+      function populateSubcategorySelect(category, selectedValue) {
+        const options = (subcategoriesByCategory[category] || []).slice();
+        populateSelect(fields.subcategory, options, true, '＋ Añadir nueva subcategoría…', ADD_SUBCATEGORY);
+        fields.subcategory.value = selectedValue || '';
+      }
+
+      function populateSelect(select, options, includeEmpty, actionLabel, actionValue) {
         select.innerHTML = '';
 
         if (includeEmpty) {
@@ -363,6 +392,69 @@
 
           select.appendChild(new Option(option.label, option.value));
         });
+
+        if (actionLabel) {
+          select.appendChild(new Option(actionLabel, actionValue));
+        }
+      }
+
+      function handleCategoryChange() {
+        if (fields.category.value === ADD_CATEGORY) {
+          createCategory();
+          return;
+        }
+
+        populateSubcategorySelect(fields.category.value);
+      }
+
+      function handleSubcategoryChange() {
+        if (fields.subcategory.value === ADD_SUBCATEGORY) {
+          createSubcategory();
+        }
+      }
+
+      function createCategory() {
+        const category = window.prompt('Nombre de la nueva categoría:');
+        if (!category || !category.trim()) {
+          fields.category.value = '';
+          populateSubcategorySelect('');
+          return;
+        }
+
+        setStatus('Guardando categoría...', '');
+        google.script.run
+          .withSuccessHandler(function(catalog) {
+            subcategoriesByCategory = catalog.subcategories || {};
+            populateCategorySelect(catalog.categories, category.trim());
+            setStatus('Categoría añadida.', 'success');
+          })
+          .withFailureHandler(handleError)
+          .addCategory(category.trim());
+      }
+
+      function createSubcategory() {
+        const category = fields.category.value;
+        if (!category) {
+          fields.subcategory.value = '';
+          setStatus('Selecciona una categoría antes de añadir una subcategoría.', 'error');
+          return;
+        }
+
+        const subcategory = window.prompt('Nombre de la nueva subcategoría para "' + category + '":');
+        if (!subcategory || !subcategory.trim()) {
+          fields.subcategory.value = '';
+          return;
+        }
+
+        setStatus('Guardando subcategoría...', '');
+        google.script.run
+          .withSuccessHandler(function(catalog) {
+            subcategoriesByCategory = catalog.subcategories || {};
+            populateSubcategorySelect(category, subcategory.trim());
+            setStatus('Subcategoría añadida.', 'success');
+          })
+          .withFailureHandler(handleError)
+          .addSubcategory(category, subcategory.trim());
       }
 
       function handleSubmit(event) {
@@ -386,6 +478,7 @@
           type: fields.type.value,
           account: fields.account.value,
           category: fields.category.value,
+          subcategory: fields.subcategory.value,
           description: fields.description.value,
           amount: fields.amount.value,
           person: fields.person.value,
@@ -396,6 +489,7 @@
       function resetAfterSave() {
         fields.description.value = '';
         fields.category.value = '';
+        populateSubcategorySelect('');
         fields.amount.value = '';
         fields.notes.value = '';
         saveButton.disabled = false;
@@ -416,7 +510,7 @@
           const row = document.createElement('tr');
           const cell = document.createElement('td');
           cell.className = 'empty';
-          cell.colSpan = 8;
+          cell.colSpan = 9;
           cell.textContent = 'Todavía no hay transacciones.';
           row.appendChild(cell);
           recentTransactionsBody.appendChild(row);
@@ -429,6 +523,7 @@
           appendCell(row, transaction.type);
           appendCell(row, transaction.account);
           appendCell(row, transaction.category);
+          appendCell(row, transaction.subcategory);
           appendCell(row, transaction.description);
           appendCell(row, transaction.person);
           appendCell(row, formatAmount(transaction.amount), 'amount');

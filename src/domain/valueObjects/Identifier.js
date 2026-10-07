@@ -1,9 +1,7 @@
-const ValidationException = require('../exceptions/ValidationException');
-
 /**
  * Immutable value object that wraps a non-empty string identifier.
  */
-class Identifier {
+var Identifier = class Identifier {
   /**
    * Creates an identifier.
    *
@@ -37,6 +35,4 @@ class Identifier {
   toString() {
     return this.value;
   }
-}
-
-module.exports = Identifier;
+};
